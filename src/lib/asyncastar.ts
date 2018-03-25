@@ -35,13 +35,15 @@ export class NodeCost<T> {
   public f: number;
   public closed: boolean;
   public open: boolean;
+  public parent: NodeCost<T>
 
-  constructor(data) {
+  constructor(data, open = true, g = 0) {
     this.data = data;
-    this.g = 0;
+    this.g = g;
     this.f = 0;
     this.closed = false;
-    this.open = true;
+    this.open = open;
+    this.parent = null
   }
 }
 
@@ -50,7 +52,7 @@ export class AsyncAstar<T> {
 
   private nodeSet: Map<string, NodeCost<T>>;
   private startNode: NodeCost<T>;
-  private goalNode: NodeCost<T>;
+  private goal: T;
   private hashFn: HashFn<T>;
   private genSuccessorsFn: GenSuccessorsFn<T>;
   private heuristicFn: HeuristicFn<T>;
@@ -58,25 +60,27 @@ export class AsyncAstar<T> {
   private openList: HeapT<NodeCost<T>>;
 
   constructor(
-    startNode: T,
-    goalNode: T,
+    start: T,
+    goal: T,
     hashFn: HashFn<T>,
     genSuccessorsFn: GenSuccessorsFn<T>,
     heuristicFn: HeuristicFn<T>,
     stopFn?: StopFn<T>
   ) {
-    this.startNode = new NodeCost(startNode);
-    this.goalNode = new NodeCost(goalNode);
+    this.startNode = new NodeCost(start);
+    // this.goalNode = new NodeCost(goalNode, false, Number.POSITIVE_INFINITY);
+    this.goal = goal
     this.hashFn = hashFn
     this.genSuccessorsFn = genSuccessorsFn
     this.heuristicFn = heuristicFn
-    this.stopFn = stopFn ? stopFn : (a, b) => a === b;
+    this.stopFn = stopFn ? stopFn : (a, b) => a == b;
 
     this.nodeSet = new Map();
     this.nodeSet.set(this.hashFn(this.startNode.data), this.startNode);
-    this.nodeSet.set(this.hashFn(this.goalNode.data), this.startNode);
+    // this.nodeSet.set(this.hashFn(this.goalNode.data), this.goalNode);
 
     this.openList = new Heap.default((a, b) => a.f - b.f);
+    this.openList.push(this.startNode)
 
     this.finished = false;
   }
@@ -92,9 +96,9 @@ export class AsyncAstar<T> {
         return { status: AsyncAstarStatus.FAIL };
       }
       // Check if we have found the goal
-      if (this.stopFn(curNode.data, this.goalNode.data)) {
+      if (this.stopFn(curNode.data, this.goal)) {
         // TODO get path
-        return { status: AsyncAstarStatus.SUCCESS };
+        return { status: AsyncAstarStatus.SUCCESS, path: this.getPath(curNode) };
       }
       // Put this node on the closed 'list', simply set a bit flag
       curNode.closed = true;
@@ -111,16 +115,19 @@ export class AsyncAstar<T> {
           // New Node
           possibleNode = new NodeCost(neighbors[j])
           possibleNode.g = curNode.g + transition[j]
-          possibleNode.f = possibleNode.g + this.heuristicFn(possibleNode.data, this.goalNode.data)
+          possibleNode.f = possibleNode.g + this.heuristicFn(possibleNode.data, this.goal)
+          possibleNode.parent = curNode
           // Push onto the open list
           this.openList.push(possibleNode)
+          this.nodeSet.set(this.hashFn(neighbors[j]), possibleNode)
         } else {
           // Must already be in the open list/frontier
           const newG = curNode.g + transition[j]
           if (newG < possibleNode.g) {
             // This path is better!
             possibleNode.g = newG
-            possibleNode.f = newG + this.heuristicFn(possibleNode.data, this.goalNode.data)
+            possibleNode.f = newG + this.heuristicFn(possibleNode.data, this.goal)
+            possibleNode.parent = curNode
             this.openList.updateItem(possibleNode);
           }
 
@@ -130,6 +137,19 @@ export class AsyncAstar<T> {
     }
     // We looped thorough all iterations, but did not find the goal
     return { status: AsyncAstarStatus.NORM }
+  }
+  public getPath(goal: NodeCost<T>): Array<NodeCost<T>> {
+    const path = []
+    path.push(goal)
+    // Iterate through the path
+    let node = goal
+    while (node.parent !== null) {
+      const parent = node.parent
+      path.push(parent)
+      node = parent
+    }
+    path.reverse()
+    return path
   }
 
 }
