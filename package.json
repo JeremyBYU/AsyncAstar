@@ -17,7 +17,6 @@
     "fix:prettier": "prettier \"src/**/*.ts\" --write",
     "fix:tslint": "tslint --fix --project .",
     "test": "run-s build test:*",
-    "test:lint": "tslint --project . && prettier \"src/**/*.ts\" --list-different",
     "test:unit": "nyc --silent ava",
     "test:nsp": "nsp check",
     "watch": "run-s clean build:main && run-p \"build:main -- -w\" \"test:unit -- --watch\"",
@@ -59,12 +58,15 @@
     "ava": "^1.0.0-beta.3",
     "codecov": "^3.0.0",
     "cz-conventional-changelog": "^2.1.0",
+    "get-pixels": "^3.3.0",
     "gh-pages": "^1.0.0",
+    "ndarray": "^1.0.18",
     "npm-run-all": "^4.1.2",
     "npm-scripts-info": "^0.3.6",
     "nsp": "^3.2.1",
     "nyc": "^11.5.0",
     "opn-cli": "^3.1.0",
+    "pngjs": "^3.3.2",
     "prettier": "^1.10.2",
     "standard-version": "^4.0.0",
     "trash-cli": "^1.4.0",
@@ -72,7 +74,8 @@
     "tslint-config-prettier": "^1.8.0",
     "tslint-immutable": "^4.5.1",
     "typedoc": "^0.11.1",
-    "typescript": "^2.4.1"
+    "typescript": "^2.4.1",
+    "upng-js": "^2.1.0"
   },
   "ava": {
     "failFast": true,
