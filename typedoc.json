@@ -1,0 +1,7 @@
+{
+  "mode": "file",
+  "out": "build/docs",
+  "target": "ES6",
+  "exclude": "**/tests/**/*.ts",
+  "theme": "default"
+}
