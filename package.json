@@ -16,8 +16,8 @@
     "fix": "run-s fix:*",
     "fix:prettier": "prettier \"src/**/*.ts\" --write",
     "fix:tslint": "tslint --fix --project .",
-    "test": "run-s build test:*",
-    "test:unit": "nyc --silent ava",
+    "test": "run-s test:*",
+    "test:unit": "jest --no-cache",
     "test:nsp": "nsp check",
     "watch": "run-s clean build:main && run-p \"build:main -- -w\" \"test:unit -- --watch\"",
     "cov": "run-s build test:unit cov:html && opn coverage/index.html",
@@ -32,7 +32,8 @@
     "reset": "git clean -dfx && git reset --hard && npm i",
     "clean": "trash build test",
     "all": "run-s reset test cov:check doc:html",
-    "prepare-release": "run-s all version doc:publish"
+    "prepare-release": "run-s all version doc:publish",
+    "premytest": "npm run build"
   },
   "scripts-info": {
     "info": "Display information about the package scripts",
@@ -54,16 +55,18 @@
     "@types/ndarray": "^1.0.6",
     "fastpriorityqueue": "^0.3.1",
     "heap": "^0.2.6",
-    "lodash": "^4.17.5"
+    "lodash": "^4.17.5",
+    "ndarray": "^1.0.18"
   },
   "devDependencies": {
-    "ava": "^1.0.0-beta.3",
-    "ava-ts": "^0.24.2",
+    "@types/color": "^3.0.0",
+    "@types/jest": "^22.2.2",
     "codecov": "^3.0.0",
+    "color": "^3.0.0",
     "cz-conventional-changelog": "^2.1.0",
     "get-pixels": "^3.3.0",
     "gh-pages": "^1.0.0",
-    "ndarray": "^1.0.18",
+    "jest": "^22.4.3",
     "npm-run-all": "^4.1.2",
     "npm-scripts-info": "^0.3.6",
     "nsp": "^3.2.1",
@@ -71,24 +74,32 @@
     "opn-cli": "^3.1.0",
     "pngjs": "^3.3.2",
     "prettier": "^1.10.2",
+    "save-pixels": "^2.3.4",
     "standard-version": "^4.0.0",
     "trash-cli": "^1.4.0",
+    "ts-jest": "^22.4.2",
     "ts-node": "^5.0.1",
     "tslint": "^5.4.3",
     "tslint-config-prettier": "^1.8.0",
     "tslint-immutable": "^4.5.1",
     "typedoc": "^0.11.1",
     "typescript": "^2.4.1",
-    "upng-js": "^2.1.0"
+    "zeros": "^1.0.0"
   },
-  "ava": {
-    "failFast": true,
-    "files": [
-      "build/main/**/*.spec.js"
+  "jest": {
+    "testPathIgnorePatterns": [
+      "/node_modules/",
+      "/build"
     ],
-    "sources": [
-      "build/main/**/*.js"
-    ]
+    "moduleFileExtensions": [
+      "ts",
+      "js"
+    ],
+    "transform": {
+      "\\.(ts|tsx)$": "ts-jest"
+    },
+    "testRegex": "(/__tests__/.*|(\\.|/)(test|spec))\\.(js?|ts?)$",
+    "collectCoverage": true
   },
   "config": {
     "commitizen": {

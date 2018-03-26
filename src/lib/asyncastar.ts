@@ -17,7 +17,7 @@ export type GenSuccessorsFn<T> = (node: T) => [T[], number[]];
 
 export type HeuristicFn<T> = (node: T, gaolNode:T) => number;
 
-export interface AsynAstarResult<T> {
+export interface AsyncAstarResult<T> {
   status: AsyncAstarStatus;
   path?: Array<NodeCost<T>>;
 }
@@ -73,7 +73,7 @@ export class AsyncAstar<T> {
     this.hashFn = hashFn
     this.genSuccessorsFn = genSuccessorsFn
     this.heuristicFn = heuristicFn
-    this.stopFn = stopFn ? stopFn : (a, b) => a == b;
+    this.stopFn = stopFn ? stopFn : (a, b) => a === b;
 
     this.nodeSet = new Map();
     this.nodeSet.set(this.hashFn(this.startNode.data), this.startNode);
@@ -84,9 +84,9 @@ export class AsyncAstar<T> {
 
     this.finished = false;
   }
-  public search(iterations = Number.POSITIVE_INFINITY) {
+  public searchAsync(iterations = Number.POSITIVE_INFINITY) :AsyncAstarResult<T> {
     if (this.finished) {
-      return AsyncAstarStatus.ERROR;
+      return { status: AsyncAstarStatus.ERROR};
     }
     // Instead of a While loop, we use the iterations requested (node expansions)
     for (let i = 0; i < iterations; i++) {
@@ -151,10 +151,22 @@ export class AsyncAstar<T> {
     path.reverse()
     return path
   }
+  public getAllNodes() {
+    return this.nodeSet
+  }
+  public reset(start, goal) {
+    this.startNode = new NodeCost(start);
+    this.goal = goal
+
+    this.nodeSet = new Map();
+    this.nodeSet.set(this.hashFn(this.startNode.data), this.startNode);
+    // this.nodeSet.set(this.hashFn(this.goalNode.data), this.goalNode);
+
+    this.openList = new Heap.default((a, b) => a.f - b.f);
+    this.openList.push(this.startNode)
+
+    this.finished = false;
+  }
 
 }
 
-// const heap = new Heap.default();
-// heap.push(1)
-// heap.push(2)
-// console.info(heap)

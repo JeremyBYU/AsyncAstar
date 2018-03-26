@@ -1,50 +1,69 @@
 // tslint:disable:no-expression-statement
-import anyTest, { TestInterface } from 'ava';
+// import anyTest, { TestInterface } from 'ava';
 import * as fs from 'fs';
-import { createPlanner } from './util';
+import { join } from 'path';
 
 import ndarray from 'ndarray';
-// import * as ndarray1 from 'ndarray'
 import * as PNGJS from 'pngjs';
+import savePixels from 'save-pixels';
+
+import {
+  AsyncAstar,
+  AsyncAstarResult,
+  AsyncAstarStatus
+} from '../lib/asyncastar';
+import { copyNdaray, createPlanner, NodeData } from '../lib/util';
+import { MAZE_TESTS, MAZES } from './fixtures/data';
+import { saveImage } from './helper';
 
 // Require imports necessitate this
 const PNG = PNGJS.default.PNG;
-// const ndarray = ndarray1.default
+const tempPNG = 'tmp.png';
+const FIXTURE_FOLDER = 'src/tests/fixtures';
 
-const test = anyTest as TestInterface<{ image: ndarray }>;
-
-test.before(t => {
-  const buf = fs.readFileSync('src/tests/fixtures/44_44.png');
+// Import the maze data (read PNG images)
+const MAZE_DATA = MAZES.map(maze => {
+  const fname = join(FIXTURE_FOLDER, maze.file)
+  const buf = fs.readFileSync(fname);
   const img = PNG.sync.read(buf);
-  const imgArray = ndarray(
+  const data = ndarray(
     new Uint8Array(img.data),
     [img.width | 0, img.height | 0, 4],
     [4, (4 * img.width) | 0, 1],
     0
   );
-  t.context.image = imgArray;
+  return { ...maze, data, fname };
 });
 
-// test.beforeEach(t => {
-// })
-
-test('Loaded Image', t => {
-  const maze = t.context.image;
-
-  t.truthy(maze);
+MAZE_TESTS.forEach(mazeTest => {
+  describe(mazeTest.name, () => {
+    let mazeInfo
+    let maze:ndarray;
+    let result: AsyncAstarResult<NodeData>;
+    let planner: AsyncAstar<NodeData>;
+    beforeAll(() => {
+      mazeInfo = MAZE_DATA.find(mzData => mazeTest.maze === mzData.name)
+      maze = mazeInfo.data;
+      planner = createPlanner(maze, mazeTest.start, mazeTest.goal);
+      result = planner.searchAsync();
+    });
+    test('Find Goal', () => {
+      expect(result.status).toBe(AsyncAstarStatus.SUCCESS);
+    });
+    test('Correct Path', async () => {
+      const pathData = result.path.map(node => [
+        node.data.x,
+        node.data.y,
+        node.data.z
+      ]);
+      await saveImage(maze, pathData, mazeInfo.fname.slice(0,-4) + `_solved.png`, planner)
+      expect(pathData).toEqual(mazeTest.expectedPath);
+    });
+  });
 });
 
-test('44X44 Maze', t => {
-  const maze = t.context.image;
-  const width = maze.shape[0];
-  const height = maze.shape[1];
-  const depth = 1;
-  const start = [2, 2, 0] as [number, number, number];
-  const goal = [40, 41, 0] as [number, number, number];
-
-  const planner = createPlanner(width, height, depth, start, goal);
-  const result = planner.search(100000);
-  console.log(result);
-});
-
-// imgArray.get(WIDTH,HEIGHT,CHANNEL)
+// Create new image and write to it
+// const newArr = copyNdaray(maze)
+// drawPath(newArr, result.path)
+// const tmpPNGFile = fs.createWriteStream(tempPNG);
+// savePixels(newArr, "png").pipe(tmpPNGFile)
