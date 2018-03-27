@@ -73,7 +73,7 @@ export class AsyncAstar<T> {
     this.hashFn = hashFn
     this.genSuccessorsFn = genSuccessorsFn
     this.heuristicFn = heuristicFn
-    this.stopFn = stopFn ? stopFn : (a, b) => a === b;
+    this.stopFn = stopFn ? stopFn : (a, b) => this.hashFn(a) === this.hashFn(b);
 
     this.nodeSet = new Map();
     this.nodeSet.set(this.hashFn(this.startNode.data), this.startNode);
@@ -84,7 +84,7 @@ export class AsyncAstar<T> {
 
     this.finished = false;
   }
-  public searchAsync(iterations = Number.POSITIVE_INFINITY) :AsyncAstarResult<T> {
+  public searchAsync(iterations = Number.POSITIVE_INFINITY, closedNodeCb?, openNodeCb?) :AsyncAstarResult<T> {
     if (this.finished) {
       return { status: AsyncAstarStatus.ERROR};
     }
@@ -104,6 +104,9 @@ export class AsyncAstar<T> {
       curNode.closed = true;
       curNode.open = false;
       const [neighbors, transition] = this.genSuccessorsFn(curNode.data)
+      if (closedNodeCb) {
+        closedNodeCb(curNode)
+      }
       // Iterate through neighbors. Remember the neighbors are Nodes (T) not NodeCost<T>
       // Hence we look it up in the node set using the hash function, which return NodeCost<T>
       for (let j = 0; j < neighbors.length; j++) {
@@ -120,6 +123,9 @@ export class AsyncAstar<T> {
           // Push onto the open list
           this.openList.push(possibleNode)
           this.nodeSet.set(this.hashFn(neighbors[j]), possibleNode)
+          if (openNodeCb) {
+            openNodeCb(possibleNode)
+          }
         } else {
           // Must already be in the open list/frontier
           const newG = curNode.g + transition[j]

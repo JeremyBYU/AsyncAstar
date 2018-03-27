@@ -47,6 +47,8 @@ Then submit any PR's, following the contributing guidelines.
 
 
 
+X and Y might be flipped in NDARRAY
+
 
 
 

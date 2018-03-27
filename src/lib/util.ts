@@ -11,11 +11,15 @@ export function toArrayBuffer(buf) {
   return ab;
 }
 
+const SCALE = 255.0;
+const ST = 1.0;
+const DG1 = 1.4142135; // root 2
+const DG2 = 1.73025; // root 5
 
 export function copyNdaray(arr: ndarray) {
-  const arrData = arr.data.slice()
-  const newArr = ndarray(arrData, arr.shape, arr.stride, arr.offset)
-  return newArr
+  const arrData = arr.data.slice();
+  const newArr = ndarray(arrData, arr.shape, arr.stride, arr.offset);
+  return newArr;
 }
 
 // export function drawPath(arr: ndarray, path: Array<[number, number, number]>): void {
@@ -52,88 +56,252 @@ function manhattan(a, b) {
   return Math.abs(a.x - b.x) + Math.abs(a.y - b.y);
 }
 
-function heuristic(a, b) {
-  return Math.sqrt(Math.pow(a.x - b.x, 2) + Math.pow(a.y - b.y, 2));
+function euclidean(a, b) {
+  return Math.sqrt(Math.pow(a.x - b.x, 2) + Math.pow(a.y - b.y, 2) + Math.pow(a.z - b.z, 2));
 }
 
-function genSuccessors(map: ndarray, a: NodeData): [NodeData[], number[]] {
-  const [ width, height, depth ] = [map.shape[0], map.shape[1], map.shape[2]];
+function genSuccessors(map: ndarray, allowDiag:boolean = true, a: NodeData): [NodeData[], number[]] {
+  const [width, height, depth] = [map.shape[0], map.shape[1], map.shape[2]];
   const neighbors = [];
   const transitions: number[] = [];
   // - Y TOP
+  let val;
   if (a.y - 1 > 0) {
-    if (map.get(a.x, a.y -1, a.z) !== 255) {
+    val = map.get(a.x, a.y - 1, a.z);
+    if (val !== SCALE) {
       neighbors.push(new NodeData(a.x, a.y - 1, a.z));
-      transitions.push(1);
+      transitions.push((1 + val / SCALE) * ST);
     }
   }
   // -Y+X TOP-RIGHT
-  if (a.y - 1 > 0 && a.x + 1 < width) {
-    if (map.get(a.x + 1, a.y -1, a.z) !== 255) {
+  if (a.y - 1 > 0 && a.x + 1 < width && allowDiag) {
+    val = map.get(a.x + 1, a.y - 1, a.z);
+    if (val !== SCALE) {
       neighbors.push(new NodeData(a.x + 1, a.y - 1, a.z));
-      transitions.push(1);
+      transitions.push((1 + val / SCALE) * DG1);
     }
   }
   // + X RIGHT
   if (a.x + 1 < width) {
-    if (map.get(a.x + 1, a.y, a.z) !== 255) {
+    val = map.get(a.x + 1, a.y, a.z);
+    if (val !== SCALE) {
       neighbors.push(new NodeData(a.x + 1, a.y, a.z));
-      transitions.push(1);
+      transitions.push((1 + val / SCALE) * ST);
     }
   }
   // + X + Y RIGHT-BOTTOM
-  if (a.x + 1 < width && a.y + 1 < height) {
-    if (map.get(a.x + 1, a.y + 1, a.z) !== 255) {
+  if (a.x + 1 < width && a.y + 1 < height && allowDiag) {
+    val = map.get(a.x + 1, a.y + 1, a.z);
+    if (val !== SCALE) {
       neighbors.push(new NodeData(a.x + 1, a.y + 1, a.z));
-      transitions.push(1);
+      transitions.push((1 + val / SCALE) * DG1);
     }
   }
   // + Y BOTTOM
   if (a.y + 1 < height) {
-    if (map.get(a.x, a.y + 1, a.z) !== 255) {
+    val = map.get(a.x, a.y + 1, a.z);
+    if (val !== SCALE) {
       neighbors.push(new NodeData(a.x, a.y + 1, a.z));
-      transitions.push(1);
+      transitions.push((1 + val / SCALE) * ST);
     }
   }
   // + Y - X BOTTOM-LEFT
-    if (a.y + 1 < height && a.x - 1 > 0) {
-      if (map.get(a.x - 1, a.y + 1, a.z) !== 255) {
-        neighbors.push(new NodeData(a.x - 1, a.y + 1, a.z));
-        transitions.push(1);
-      }
+  if (a.y + 1 < height && a.x - 1 > 0 && allowDiag) {
+    val = map.get(a.x - 1, a.y + 1, a.z)
+    if (val !== SCALE) {
+      neighbors.push(new NodeData(a.x - 1, a.y + 1, a.z));
+      transitions.push((1 + val / SCALE) * DG1);
     }
+  }
   // - X LEFT
   if (a.x - 1 > 0) {
-    if (map.get(a.x - 1, a.y, a.z) !== 255) {
+    val = map.get(a.x - 1, a.y, a.z)
+    if (val !== SCALE) {
       neighbors.push(new NodeData(a.x - 1, a.y, a.z));
-      transitions.push(1);
+      transitions.push((1 + val / SCALE) * ST);
     }
   }
   // - X - Y LEFT-TOP
-  if (a.x - 1 > 0 && a.y - 1 > 0) {
-    if (map.get(a.x - 1, a.y - 1, a.z) !== 255) {
+  if (a.x - 1 > 0 && a.y - 1 > 0 && allowDiag) {
+    val = map.get(a.x - 1, a.y - 1, a.z)
+    if (val !== SCALE) {
       neighbors.push(new NodeData(a.x - 1, a.y - 1, a.z));
-      transitions.push(1);
+      transitions.push((1 + val / SCALE) * DG1);
     }
+  }
+  // 3D Path Planning!
+  if (depth > 1) {
+    //////// Bottom of Cube ////////////
+    // - Y - Z TOP-DOWN
+    if (a.y - 1 > 0 && a.z-1 > 0) {
+      val = map.get(a.x, a.y - 1, a.z -1);
+      if (val !== SCALE) {
+        neighbors.push(new NodeData(a.x, a.y - 1, a.z -1));
+        transitions.push((1 + val / SCALE) * DG1);
+      }
+    }
+    // -Y+X-Z TOP-RIGHT-DOWN
+    if (a.y - 1 > 0 && a.x + 1 < width && a.z -1 > 0) {
+      val = map.get(a.x + 1, a.y - 1, a.z -1);
+      if (val !== SCALE) {
+        neighbors.push(new NodeData(a.x + 1, a.y - 1, a.z -1));
+        transitions.push((1 + val / SCALE) * DG2);
+      }
+    }
+    // + X-Z RIGHT DOWN
+    if (a.x + 1 < width && a.z -1 > 0) {
+      val = map.get(a.x + 1, a.y, a.z -1);
+      if (val !== SCALE) {
+        neighbors.push(new NodeData(a.x + 1, a.y, a.z -1));
+        transitions.push((1 + val / SCALE) * DG1);
+      }
+    }
+    // + X + Y - Z RIGHT-BOTTOM-DOWN
+    if (a.x + 1 < width && a.y + 1 < height && a.z -1 > 0) {
+      val = map.get(a.x + 1, a.y + 1, a.z -1);
+      if (val !== SCALE) {
+        neighbors.push(new NodeData(a.x + 1, a.y + 1, a.z -1));
+        transitions.push((1 + val / SCALE) * DG2);
+      }
+    }
+    // + Y -Z BOTTOM-DOWN
+    if (a.y + 1 < height && a.z -1 > 0) {
+      val = map.get(a.x, a.y + 1, a.z -1);
+      if (val !== SCALE) {
+        neighbors.push(new NodeData(a.x, a.y + 1, a.z -1));
+        transitions.push((1 + val / SCALE) * DG1);
+      }
+    }
+    // + Y - X -Z BOTTOM-LEFT-DOWN
+    if (a.y + 1 < height && a.x - 1 > 0 && a.z -1 > 0) {
+      val = map.get(a.x - 1, a.y + 1, a.z -1)
+      if (val !== SCALE) {
+        neighbors.push(new NodeData(a.x - 1, a.y + 1, a.z -1));
+        transitions.push((1 + val / SCALE) * DG2);
+      }
+    }
+    // - X -Z  LEFT-DOWN
+    if (a.x - 1 > 0 && a.z -1 > 0) {
+      val = map.get(a.x - 1, a.y, a.z -1)
+      if (val !== SCALE) {
+        neighbors.push(new NodeData(a.x - 1, a.y, a.z -1));
+        transitions.push((1 + val / SCALE) * DG1);
+      }
+    }
+    // - X - Y -Z LEFT-TOP-DOWN
+    if (a.x - 1 > 0 && a.y - 1 > 0 && a.z -1 > 0) {
+      val = map.get(a.x - 1, a.y - 1, a.z -1)
+      if (val !== SCALE) {
+        neighbors.push(new NodeData(a.x - 1, a.y - 1, a.z -1));
+        transitions.push((1 + val / SCALE) * DG2);
+      }
+    }
+    // -Z DOWN
+    if (a.z -1 > 0) {
+      val = map.get(a.x, a.y, a.z -1)
+      if (val !== SCALE) {
+        neighbors.push(new NodeData(a.x, a.y, a.z -1));
+        transitions.push((1 + val / SCALE) * ST);
+      }
+    }
+
+
+    //////// Top of Cube ////////////
+    // - Y - Z TOP-UP
+    if (a.y - 1 > 0 && a.z + 1 < depth) {
+      val = map.get(a.x, a.y - 1, a.z + 1);
+      if (val !== SCALE) {
+        neighbors.push(new NodeData(a.x, a.y - 1, a.z + 1));
+        transitions.push((1 + val / SCALE) * DG1);
+      }
+    }
+    // -Y+X-Z TOP-RIGHT-UP
+    if (a.y - 1 > 0 && a.x + 1 < width && a.z + 1 < depth) {
+      val = map.get(a.x + 1, a.y - 1, a.z + 1);
+      if (val !== SCALE) {
+        neighbors.push(new NodeData(a.x + 1, a.y - 1, a.z + 1));
+        transitions.push((1 + val / SCALE) * DG2);
+      }
+    }
+    // + X-Z RIGHT UP
+    if (a.x + 1 < width && a.z + 1 < depth) {
+      val = map.get(a.x + 1, a.y, a.z + 1);
+      if (val !== SCALE) {
+        neighbors.push(new NodeData(a.x + 1, a.y, a.z + 1));
+        transitions.push((1 + val / SCALE) * DG1);
+      }
+    }
+    // + X + Y + Z RIGHT-BOTTOM-UP
+    if (a.x + 1 < width && a.y + 1 < height && a.z + 1 < depth) {
+      val = map.get(a.x + 1, a.y + 1, a.z + 1);
+      if (val !== SCALE) {
+        neighbors.push(new NodeData(a.x + 1, a.y + 1, a.z + 1));
+        transitions.push((1 + val / SCALE) * DG2);
+      }
+    }
+    // + Y + Z BOTTOM-UP
+    if (a.y + 1 < height && a.z + 1 < depth) {
+      val = map.get(a.x, a.y + 1, a.z + 1);
+      if (val !== SCALE) {
+        neighbors.push(new NodeData(a.x, a.y + 1, a.z + 1));
+        transitions.push((1 + val / SCALE) * DG1);
+      }
+    }
+    // + Y - X -Z BOTTOM-LEFT-UP
+    if (a.y + 1 < height && a.x - 1 > 0 && a.z + 1 < depth) {
+      val = map.get(a.x - 1, a.y + 1, a.z + 1)
+      if (val !== SCALE) {
+        neighbors.push(new NodeData(a.x - 1, a.y + 1, a.z + 1));
+        transitions.push((1 + val / SCALE) * DG2);
+      }
+    }
+    // - X -Z  LEFT-UP
+    if (a.x - 1 > 0 && a.z + 1 < depth) {
+      val = map.get(a.x - 1, a.y, a.z + 1)
+      if (val !== SCALE) {
+        neighbors.push(new NodeData(a.x - 1, a.y, a.z + 1));
+        transitions.push((1 + val / SCALE) * DG1);
+      }
+    }
+    // - X - Y -Z LEFT-TOP-UP
+    if (a.x - 1 > 0 && a.y - 1 > 0 && a.z + 1 < depth) {
+      val = map.get(a.x - 1, a.y - 1, a.z + 1)
+      if (val !== SCALE) {
+        neighbors.push(new NodeData(a.x - 1, a.y - 1, a.z + 1));
+        transitions.push((1 + val / SCALE) * DG2);
+      }
+    }
+    // -Z UP
+    if (a.z + 1 < depth) {
+      val = map.get(a.x, a.y, a.z + 1)
+      if (val !== SCALE) {
+        neighbors.push(new NodeData(a.x, a.y, a.z + 1));
+        transitions.push((1 + val / SCALE) * ST);
+      }
+    }
+
   }
   return [neighbors, transitions];
 }
 
 function stopFn(a, b) {
-  return a.x === b.x && a.y === b.y && a.z === b.z
+  return a.x === b.x && a.y === b.y && a.z === b.z;
 }
 
 export function createPlanner(
   map,
   start: [number, number, number],
-  goal: [number, number, number]
+  goal: [number, number, number],
+  allowDiag: boolean = true,
+  heuristic: string = 'manhattan'
 ) {
   // Spread operator does not work with typescript here (must destructure)... (https://github.com/Microsoft/TypeScript/issues/4130)
   const [sx, sy, sz] = start;
   const [gx, gy, gz] = goal;
   const startNode = new NodeData(sx, sy, sz);
   const goalNode = new NodeData(gx, gy, gz);
-  const genSuccessorsPartial = partial(genSuccessors, map);
+  const genSuccessorsPartial = partial(genSuccessors, map, allowDiag);
+  const heuristicFn = heuristic === 'manhattan' ? manhattan : euclidean
 
   const planner = new AsyncAstar<NodeData>(
     startNode,

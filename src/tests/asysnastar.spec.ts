@@ -23,7 +23,10 @@ const FIXTURE_FOLDER = 'src/tests/fixtures';
 
 // Import the maze data (read PNG images)
 const MAZE_DATA = MAZES.map(maze => {
-  const fname = join(FIXTURE_FOLDER, maze.file)
+  const fname = join(FIXTURE_FOLDER, maze.file || maze.name)
+  if (maze.data) {
+    return {...maze, fname}
+  }
   const buf = fs.readFileSync(fname);
   const img = PNG.sync.read(buf);
   const data = ndarray(
@@ -44,7 +47,7 @@ MAZE_TESTS.forEach(mazeTest => {
     beforeAll(() => {
       mazeInfo = MAZE_DATA.find(mzData => mazeTest.maze === mzData.name)
       maze = mazeInfo.data;
-      planner = createPlanner(maze, mazeTest.start, mazeTest.goal);
+      planner = createPlanner(maze, mazeTest.start, mazeTest.goal, mazeTest.allowDiag, mazeTest.heuristic);
       result = planner.searchAsync();
     });
     test('Find Goal', () => {
@@ -56,7 +59,7 @@ MAZE_TESTS.forEach(mazeTest => {
         node.data.y,
         node.data.z
       ]);
-      await saveImage(maze, pathData, mazeInfo.fname.slice(0,-4) + `_solved.png`, planner)
+      await saveImage(maze, pathData, mazeInfo.fname.slice(0,-4) + `_solved.png`, planner, mazeInfo.is3D)
       expect(pathData).toEqual(mazeTest.expectedPath);
     });
   });

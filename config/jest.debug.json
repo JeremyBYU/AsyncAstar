@@ -1,0 +1,17 @@
+{
+    "testPathIgnorePatterns": [
+      "/node_modules/",
+      "/src",
+      "/build/module"
+    ],
+    "moduleFileExtensions": [
+      "ts",
+      "js"
+    ],
+    "transform": {
+      "\\.(ts|tsx)$": "ts-jest"
+    },
+    "testRegex": "(/__tests__/.*|(\\.|/)(test|spec))\\.(js?|ts?)$",
+    "collectCoverage": true,
+    "rootDir": "../"
+  }
