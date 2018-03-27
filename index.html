@@ -64,77 +64,91 @@
 	<div class="row">
 		<div class="col-8 col-content">
 			<div class="tsd-panel tsd-typography">
-				<h1 id="async-astar">async-astar</h1>
-				<p>Stuff</p>
-				<p>Percolate up (FastPriorityQueue) is sift down (heap)</p>
-				<h3 id="options">Options</h3>
-				<p>Initialize it-
-				User Defined</p>
-				<ul>
-					<li><p>Node Class</p>
-						<ul>
-							<li>equality</li>
-							<li>Hashing function</li>
-							<li>x, y z</li>
-						</ul>
-					</li>
-					<li><p>Successor Function as well as edge cost</p>
-						<ul>
-							<li>returns list of nodes as well as cost (travel cost + heat map)</li>
-						</ul>
-					</li>
-					<li><p>Stop Node</p>
-					</li>
-					<li><p>Start Node</p>
-					</li>
-					<li><p>Num Expansions</p>
-					</li>
-				</ul>
-				<p>Library</p>
-				<ul>
-					<li><p>NodeCost Class</p>
-						<ul>
-							<li>Encapsulates Node Class</li>
-							<li>Has g, f, closed, frontier</li>
-						</ul>
-					</li>
-					<li><p>Member Attributes</p>
-						<ul>
-							<li>NodeSet (dict, or Map)</li>
-							<li>Frontier (Open List) Priority Queue</li>
-						</ul>
-					</li>
-					<li>Member Functions<ul>
-							<li>addNode()</li>
-							<li>Initialize Routine<ul>
-									<li>Add start PriorityQueue</li>
-									<li>Set the hashing function</li>
-								</ul>
-							</li>
-							<li>GenerateSuccesors<ul>
-									<li>Call the user one</li>
-									<li>Remove those in the closed list</li>
-								</ul>
-							</li>
-							<li>ExpandRoutine<ul>
-									<li>CurrentNode = Pop frontier (chceck empty)</li>
-									<li>Goal Check</li>
-									<li>Add Closed Bit to node (curNode.closed = true)</li>
-									<li>Generate successor and costs arrays</li>
-									<li>Skip those in closed list</li>
-									<li>Calclate a temporary path cost </li>
-								</ul>
-							</li>
-							<li></li>
-						</ul>
-					</li>
-				</ul>
-				<pre><code>updateItem = (<span class="hljs-keyword">array</span>, <span class="hljs-literal">item</span>, cmp=defaultCmp) -&gt;
-  pos = <span class="hljs-keyword">array</span>.indexOf(<span class="hljs-literal">item</span>)
-  <span class="hljs-keyword">return</span> <span class="hljs-keyword">if</span> pos is -<span class="hljs-number">1</span>
-  _siftdown(<span class="hljs-keyword">array</span>, <span class="hljs-number">0</span>, pos, cmp)
-  _siftup(<span class="hljs-keyword">array</span>, pos, cmp)
+				<h1 id="asyncastar">AsyncAStar</h1>
+				<p>This module allows one to execute A<em> search in an Asynchronous pattern. It is very similar to <a href="https://easystarjs.com/">EasyStar</a>, however this module can be used for more than 2D planning for game development as EasyStar is designed for. It allows one to specify a generic <code>Generate Successors</code> function, not needing to know anything about the graph. In other words, this module only cares about the </em>algorithm<em> of A</em>, not the graph, which is from your specific problem domain. It could be 2D, 3D, or however many dimensions you may need (though A* performance suffers greatly at higher dimensions).</p>
+				<h2 id="getting-started">Getting Started</h2>
+				<p>Install : <code>npm  install asyncastar</code></p>
+				<h3 id="simple-2d-or-3d-path-planning">Simple 2D or 3D Path Planning</h3>
+				<p>Since most people will probably do 2D or 3D path planning, there is a simple wrapper for <code>AsyncAStar</code> called
+				<code>createPlanner</code> that assumes a 3D discretized space using <code>ndarray</code> as the data holder of this space. The demonstration below shows 3D planning within a plane (basically 2D).</p>
+				<pre><code class="lang-js"><span class="hljs-keyword">import</span> { createPlanner} <span class="hljs-keyword">from</span> <span class="hljs-string">'../lib/util'</span>;
+<span class="hljs-keyword">const</span> start = [<span class="hljs-number">0</span>, <span class="hljs-number">0</span>, <span class="hljs-number">0</span>]
+<span class="hljs-keyword">const</span> goal = [<span class="hljs-number">2</span>, <span class="hljs-number">2</span>, <span class="hljs-number">0</span>]
+<span class="hljs-keyword">const</span> maze = ndarray([<span class="hljs-number">0</span>,<span class="hljs-number">0</span>,<span class="hljs-number">0</span>,<span class="hljs-number">0</span>,<span class="hljs-number">0</span>,<span class="hljs-number">0</span>,<span class="hljs-number">0</span>,<span class="hljs-number">0</span>,<span class="hljs-number">0</span>], [<span class="hljs-number">3</span>,<span class="hljs-number">3</span>,<span class="hljs-number">1</span>]) <span class="hljs-comment">// Empty 3X3X1 Maze</span>
+planner = createPlanner(maze, mazeTest.start, mazeTest.goal);
+
+<span class="hljs-keyword">let</span> result = planner.searchAsync(<span class="hljs-number">1</span>) <span class="hljs-comment">// only 1 expansion</span>
+<span class="hljs-built_in">console</span>.log(result)
+
+
+result = planner.searchAsync(<span class="hljs-number">3</span>) <span class="hljs-comment">// allow 3 more expansions</span>
+<span class="hljs-built_in">console</span>.log(result)
+
+
 </code></pre>
+				<p>Full API: <a href="https://jeremybyu.github.io/AsyncAstar/">https://jeremybyu.github.io/AsyncAstar/</a></p>
+				<h2 id="issues-bugs-feature-requests">Issues/Bugs/Feature Requests</h2>
+				<p>Feel free to file any issues (bugs), or feature requests.  Please follow the Issue template however.</p>
+				<h2 id="development">Development</h2>
+				<p>First download, pull, and run tests.  Make sure its all working!</p>
+				<ol>
+					<li><code>git pull https://github.com/JeremyBYU/AsyncAstar.git</code></li>
+					<li><code>npm install</code></li>
+					<li><code>npm run test</code></li>
+				</ol>
+				<p>Then submit any PR&#39;s, following the contributing guidelines.</p>
+				<!-- ### Options
+
+Initialize it- 
+User Defined
+* Node Class
+  * equality
+  * Hashing function
+  * x, y z
+
+* Successor Function as well as edge cost
+  * returns list of nodes as well as cost (travel cost + heat map)
+
+* Stop Node
+
+* Start Node
+
+* Num Expansions
+
+Library
+* NodeCost Class
+  * Encapsulates Node Class
+  * Has g, f, closed, frontier
+
+* Member Attributes
+  * NodeSet (dict, or Map)
+  * Frontier (Open List) Priority Queue
+* Member Functions
+  * addNode()
+  * Initialize Routine
+    * Add start PriorityQueue
+    * Set the hashing function
+  * GenerateSuccesors
+    * Call the user one
+    * Remove those in the closed list
+  * ExpandRoutine
+    * CurrentNode = Pop frontier (chceck empty)
+    * Goal Check
+    * Add Closed Bit to node (curNode.closed = true)
+    * Generate successor and costs arrays
+    * Skip those in closed list
+    * Calclate a temporary path cost 
+  * 
+
+
+
+```
+updateItem = (array, item, cmp=defaultCmp) ->
+  pos = array.indexOf(item)
+  return if pos is -1
+  _siftdown(array, 0, pos, cmp)
+  _siftup(array, pos, cmp)
+``` -->
 			</div>
 		</div>
 		<div class="col-4 col-menu menu-sticky-wrap menu-highlight">
@@ -173,6 +187,9 @@
 					</li>
 					<li class=" tsd-kind-type-alias tsd-has-type-parameter">
 						<a href="globals.html#stopfn" class="tsd-kind-icon">Stop<wbr>Fn</a>
+					</li>
+					<li class=" tsd-kind-variable">
+						<a href="globals.html#util" class="tsd-kind-icon">util</a>
 					</li>
 					<li class=" tsd-kind-function">
 						<a href="globals.html#copyndaray" class="tsd-kind-icon">copy<wbr>Ndaray</a>
