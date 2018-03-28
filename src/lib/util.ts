@@ -308,7 +308,7 @@ export function createPlanner(
     goalNode,
     hash,
     genSuccessorsPartial,
-    manhattan,
+    heuristicFn,
     stopFn
   );
 
