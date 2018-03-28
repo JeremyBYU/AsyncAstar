@@ -1,6 +1,6 @@
 {
   "name": "@jeremybyu/asyncastar",
-  "version": "0.0.5",
+  "version": "0.0.6",
   "description": "Asynchronous A* Path Planner",
   "main": "build/main/index.js",
   "typings": "build/main/index.d.ts",
