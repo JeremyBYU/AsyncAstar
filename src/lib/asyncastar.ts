@@ -93,10 +93,12 @@ export class AsyncAstar<T> {
       const curNode = this.openList.pop();
       // Check if the open list is empty
       if (curNode === undefined) {
+        this.finished = true
         return { status: AsyncAstarStatus.FAIL };
       }
       // Check if we have found the goal
       if (this.stopFn(curNode.data, this.goal)) {
+        this.finished = true
         // TODO get path
         return { status: AsyncAstarStatus.SUCCESS, path: this.getPath(curNode) };
       }
