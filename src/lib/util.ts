@@ -53,7 +53,7 @@ export class NodeData {
   }
 }
 function manhattan(a, b) {
-  return Math.abs(a.x - b.x) + Math.abs(a.y - b.y);
+  return Math.abs(a.x - b.x) + Math.abs(a.y - b.y) +  Math.abs(a.z - b.z);
 }
 
 function euclidean(a, b) {
