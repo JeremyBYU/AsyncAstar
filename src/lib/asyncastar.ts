@@ -159,6 +159,12 @@ export class AsyncAstar<T> {
     path.reverse()
     return path
   }
+  public updateHeuristic(newHeuristicFn:HeuristicFn<T>) {
+    this.heuristicFn = newHeuristicFn
+  }
+  public updateGenSuccesors(newGenSuccessors:GenSuccessorsFn<T>) {
+    this.genSuccessorsFn = newGenSuccessors
+  }
   public getAllNodes() {
     return this.nodeSet
   }

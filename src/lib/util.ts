@@ -12,6 +12,7 @@ export function toArrayBuffer(buf) {
 }
 
 const SCALE = 255.0;
+const WEIGHT = 1;
 const ST = 1.0;
 const DG1 = 1.4142135; // root 2
 const DG2 = 1.73025; // root 5
@@ -53,14 +54,21 @@ export class NodeData {
   }
 }
 function manhattan(a, b) {
-  return Math.abs(a.x - b.x) + Math.abs(a.y - b.y) +  Math.abs(a.z - b.z);
+  return Math.abs(a.x - b.x) + Math.abs(a.y - b.y) + Math.abs(a.z - b.z);
 }
 
 function euclidean(a, b) {
-  return Math.sqrt(Math.pow(a.x - b.x, 2) + Math.pow(a.y - b.y, 2) + Math.pow(a.z - b.z, 2));
+  return Math.sqrt(
+    Math.pow(a.x - b.x, 2) + Math.pow(a.y - b.y, 2) + Math.pow(a.z - b.z, 2)
+  );
 }
 
-function genSuccessors(map: ndarray, allowDiag:boolean = true, a: NodeData): [NodeData[], number[]] {
+function genSuccessors(
+  map: ndarray,
+  allowDiag: boolean = true,
+  weight: number = WEIGHT,
+  a: NodeData
+): [NodeData[], number[]] {
   const [width, height, depth] = [map.shape[0], map.shape[1], map.shape[2]];
   const neighbors = [];
   const transitions: number[] = [];
@@ -70,7 +78,7 @@ function genSuccessors(map: ndarray, allowDiag:boolean = true, a: NodeData): [No
     val = map.get(a.x, a.y - 1, a.z);
     if (val !== SCALE) {
       neighbors.push(new NodeData(a.x, a.y - 1, a.z));
-      transitions.push((1 + val / SCALE) * ST);
+      transitions.push((1 + val / SCALE * weight) * ST);
     }
   }
   // -Y+X TOP-RIGHT
@@ -78,7 +86,7 @@ function genSuccessors(map: ndarray, allowDiag:boolean = true, a: NodeData): [No
     val = map.get(a.x + 1, a.y - 1, a.z);
     if (val !== SCALE) {
       neighbors.push(new NodeData(a.x + 1, a.y - 1, a.z));
-      transitions.push((1 + val / SCALE) * DG1);
+      transitions.push((1 + val / SCALE * weight) * DG1);
     }
   }
   // + X RIGHT
@@ -86,7 +94,7 @@ function genSuccessors(map: ndarray, allowDiag:boolean = true, a: NodeData): [No
     val = map.get(a.x + 1, a.y, a.z);
     if (val !== SCALE) {
       neighbors.push(new NodeData(a.x + 1, a.y, a.z));
-      transitions.push((1 + val / SCALE) * ST);
+      transitions.push((1 + val / SCALE * weight) * ST);
     }
   }
   // + X + Y RIGHT-BOTTOM
@@ -94,7 +102,7 @@ function genSuccessors(map: ndarray, allowDiag:boolean = true, a: NodeData): [No
     val = map.get(a.x + 1, a.y + 1, a.z);
     if (val !== SCALE) {
       neighbors.push(new NodeData(a.x + 1, a.y + 1, a.z));
-      transitions.push((1 + val / SCALE) * DG1);
+      transitions.push((1 + val / SCALE * weight) * DG1);
     }
   }
   // + Y BOTTOM
@@ -102,109 +110,108 @@ function genSuccessors(map: ndarray, allowDiag:boolean = true, a: NodeData): [No
     val = map.get(a.x, a.y + 1, a.z);
     if (val !== SCALE) {
       neighbors.push(new NodeData(a.x, a.y + 1, a.z));
-      transitions.push((1 + val / SCALE) * ST);
+      transitions.push((1 + val / SCALE * weight) * ST);
     }
   }
   // + Y - X BOTTOM-LEFT
   if (a.y + 1 < height && a.x - 1 > 0 && allowDiag) {
-    val = map.get(a.x - 1, a.y + 1, a.z)
+    val = map.get(a.x - 1, a.y + 1, a.z);
     if (val !== SCALE) {
       neighbors.push(new NodeData(a.x - 1, a.y + 1, a.z));
-      transitions.push((1 + val / SCALE) * DG1);
+      transitions.push((1 + val / SCALE * weight) * DG1);
     }
   }
   // - X LEFT
   if (a.x - 1 > 0) {
-    val = map.get(a.x - 1, a.y, a.z)
+    val = map.get(a.x - 1, a.y, a.z);
     if (val !== SCALE) {
       neighbors.push(new NodeData(a.x - 1, a.y, a.z));
-      transitions.push((1 + val / SCALE) * ST);
+      transitions.push((1 + val / SCALE * weight) * ST);
     }
   }
   // - X - Y LEFT-TOP
   if (a.x - 1 > 0 && a.y - 1 > 0 && allowDiag) {
-    val = map.get(a.x - 1, a.y - 1, a.z)
+    val = map.get(a.x - 1, a.y - 1, a.z);
     if (val !== SCALE) {
       neighbors.push(new NodeData(a.x - 1, a.y - 1, a.z));
-      transitions.push((1 + val / SCALE) * DG1);
+      transitions.push((1 + val / SCALE * weight) * DG1);
     }
   }
   // 3D Path Planning!
   if (depth > 1) {
     //////// Bottom of Cube ////////////
     // - Y - Z TOP-DOWN
-    if (a.y - 1 > 0 && a.z-1 > 0) {
-      val = map.get(a.x, a.y - 1, a.z -1);
+    if (a.y - 1 > 0 && a.z - 1 > 0) {
+      val = map.get(a.x, a.y - 1, a.z - 1);
       if (val !== SCALE) {
-        neighbors.push(new NodeData(a.x, a.y - 1, a.z -1));
-        transitions.push((1 + val / SCALE) * DG1);
+        neighbors.push(new NodeData(a.x, a.y - 1, a.z - 1));
+        transitions.push((1 + val / SCALE * weight) * DG1);
       }
     }
     // -Y+X-Z TOP-RIGHT-DOWN
-    if (a.y - 1 > 0 && a.x + 1 < width && a.z -1 > 0) {
-      val = map.get(a.x + 1, a.y - 1, a.z -1);
+    if (a.y - 1 > 0 && a.x + 1 < width && a.z - 1 > 0) {
+      val = map.get(a.x + 1, a.y - 1, a.z - 1);
       if (val !== SCALE) {
-        neighbors.push(new NodeData(a.x + 1, a.y - 1, a.z -1));
-        transitions.push((1 + val / SCALE) * DG2);
+        neighbors.push(new NodeData(a.x + 1, a.y - 1, a.z - 1));
+        transitions.push((1 + val / SCALE * weight) * DG2);
       }
     }
     // + X-Z RIGHT DOWN
-    if (a.x + 1 < width && a.z -1 > 0) {
-      val = map.get(a.x + 1, a.y, a.z -1);
+    if (a.x + 1 < width && a.z - 1 > 0) {
+      val = map.get(a.x + 1, a.y, a.z - 1);
       if (val !== SCALE) {
-        neighbors.push(new NodeData(a.x + 1, a.y, a.z -1));
-        transitions.push((1 + val / SCALE) * DG1);
+        neighbors.push(new NodeData(a.x + 1, a.y, a.z - 1));
+        transitions.push((1 + val / SCALE * weight) * DG1);
       }
     }
     // + X + Y - Z RIGHT-BOTTOM-DOWN
-    if (a.x + 1 < width && a.y + 1 < height && a.z -1 > 0) {
-      val = map.get(a.x + 1, a.y + 1, a.z -1);
+    if (a.x + 1 < width && a.y + 1 < height && a.z - 1 > 0) {
+      val = map.get(a.x + 1, a.y + 1, a.z - 1);
       if (val !== SCALE) {
-        neighbors.push(new NodeData(a.x + 1, a.y + 1, a.z -1));
-        transitions.push((1 + val / SCALE) * DG2);
+        neighbors.push(new NodeData(a.x + 1, a.y + 1, a.z - 1));
+        transitions.push((1 + val / SCALE * weight) * DG2);
       }
     }
     // + Y -Z BOTTOM-DOWN
-    if (a.y + 1 < height && a.z -1 > 0) {
-      val = map.get(a.x, a.y + 1, a.z -1);
+    if (a.y + 1 < height && a.z - 1 > 0) {
+      val = map.get(a.x, a.y + 1, a.z - 1);
       if (val !== SCALE) {
-        neighbors.push(new NodeData(a.x, a.y + 1, a.z -1));
-        transitions.push((1 + val / SCALE) * DG1);
+        neighbors.push(new NodeData(a.x, a.y + 1, a.z - 1));
+        transitions.push((1 + val / SCALE * weight) * DG1);
       }
     }
     // + Y - X -Z BOTTOM-LEFT-DOWN
-    if (a.y + 1 < height && a.x - 1 > 0 && a.z -1 > 0) {
-      val = map.get(a.x - 1, a.y + 1, a.z -1)
+    if (a.y + 1 < height && a.x - 1 > 0 && a.z - 1 > 0) {
+      val = map.get(a.x - 1, a.y + 1, a.z - 1);
       if (val !== SCALE) {
-        neighbors.push(new NodeData(a.x - 1, a.y + 1, a.z -1));
-        transitions.push((1 + val / SCALE) * DG2);
+        neighbors.push(new NodeData(a.x - 1, a.y + 1, a.z - 1));
+        transitions.push((1 + val / SCALE * weight) * DG2);
       }
     }
     // - X -Z  LEFT-DOWN
-    if (a.x - 1 > 0 && a.z -1 > 0) {
-      val = map.get(a.x - 1, a.y, a.z -1)
+    if (a.x - 1 > 0 && a.z - 1 > 0) {
+      val = map.get(a.x - 1, a.y, a.z - 1);
       if (val !== SCALE) {
-        neighbors.push(new NodeData(a.x - 1, a.y, a.z -1));
-        transitions.push((1 + val / SCALE) * DG1);
+        neighbors.push(new NodeData(a.x - 1, a.y, a.z - 1));
+        transitions.push((1 + val / SCALE * weight) * DG1);
       }
     }
     // - X - Y -Z LEFT-TOP-DOWN
-    if (a.x - 1 > 0 && a.y - 1 > 0 && a.z -1 > 0) {
-      val = map.get(a.x - 1, a.y - 1, a.z -1)
+    if (a.x - 1 > 0 && a.y - 1 > 0 && a.z - 1 > 0) {
+      val = map.get(a.x - 1, a.y - 1, a.z - 1);
       if (val !== SCALE) {
-        neighbors.push(new NodeData(a.x - 1, a.y - 1, a.z -1));
-        transitions.push((1 + val / SCALE) * DG2);
+        neighbors.push(new NodeData(a.x - 1, a.y - 1, a.z - 1));
+        transitions.push((1 + val / SCALE * weight) * DG2);
       }
     }
     // -Z DOWN
-    if (a.z -1 > 0) {
-      val = map.get(a.x, a.y, a.z -1)
+    if (a.z - 1 > 0) {
+      val = map.get(a.x, a.y, a.z - 1);
       if (val !== SCALE) {
-        neighbors.push(new NodeData(a.x, a.y, a.z -1));
-        transitions.push((1 + val / SCALE) * ST);
+        neighbors.push(new NodeData(a.x, a.y, a.z - 1));
+        transitions.push((1 + val / SCALE * weight) * ST);
       }
     }
-
 
     //////// Top of Cube ////////////
     // - Y - Z TOP-UP
@@ -212,7 +219,7 @@ function genSuccessors(map: ndarray, allowDiag:boolean = true, a: NodeData): [No
       val = map.get(a.x, a.y - 1, a.z + 1);
       if (val !== SCALE) {
         neighbors.push(new NodeData(a.x, a.y - 1, a.z + 1));
-        transitions.push((1 + val / SCALE) * DG1);
+        transitions.push((1 + val / SCALE * weight) * DG1);
       }
     }
     // -Y+X-Z TOP-RIGHT-UP
@@ -220,7 +227,7 @@ function genSuccessors(map: ndarray, allowDiag:boolean = true, a: NodeData): [No
       val = map.get(a.x + 1, a.y - 1, a.z + 1);
       if (val !== SCALE) {
         neighbors.push(new NodeData(a.x + 1, a.y - 1, a.z + 1));
-        transitions.push((1 + val / SCALE) * DG2);
+        transitions.push((1 + val / SCALE * weight) * DG2);
       }
     }
     // + X-Z RIGHT UP
@@ -228,7 +235,7 @@ function genSuccessors(map: ndarray, allowDiag:boolean = true, a: NodeData): [No
       val = map.get(a.x + 1, a.y, a.z + 1);
       if (val !== SCALE) {
         neighbors.push(new NodeData(a.x + 1, a.y, a.z + 1));
-        transitions.push((1 + val / SCALE) * DG1);
+        transitions.push((1 + val / SCALE * weight) * DG1);
       }
     }
     // + X + Y + Z RIGHT-BOTTOM-UP
@@ -236,7 +243,7 @@ function genSuccessors(map: ndarray, allowDiag:boolean = true, a: NodeData): [No
       val = map.get(a.x + 1, a.y + 1, a.z + 1);
       if (val !== SCALE) {
         neighbors.push(new NodeData(a.x + 1, a.y + 1, a.z + 1));
-        transitions.push((1 + val / SCALE) * DG2);
+        transitions.push((1 + val / SCALE * weight) * DG2);
       }
     }
     // + Y + Z BOTTOM-UP
@@ -244,42 +251,41 @@ function genSuccessors(map: ndarray, allowDiag:boolean = true, a: NodeData): [No
       val = map.get(a.x, a.y + 1, a.z + 1);
       if (val !== SCALE) {
         neighbors.push(new NodeData(a.x, a.y + 1, a.z + 1));
-        transitions.push((1 + val / SCALE) * DG1);
+        transitions.push((1 + val / SCALE * weight) * DG1);
       }
     }
     // + Y - X -Z BOTTOM-LEFT-UP
     if (a.y + 1 < height && a.x - 1 > 0 && a.z + 1 < depth) {
-      val = map.get(a.x - 1, a.y + 1, a.z + 1)
+      val = map.get(a.x - 1, a.y + 1, a.z + 1);
       if (val !== SCALE) {
         neighbors.push(new NodeData(a.x - 1, a.y + 1, a.z + 1));
-        transitions.push((1 + val / SCALE) * DG2);
+        transitions.push((1 + val / SCALE * weight) * DG2);
       }
     }
     // - X -Z  LEFT-UP
     if (a.x - 1 > 0 && a.z + 1 < depth) {
-      val = map.get(a.x - 1, a.y, a.z + 1)
+      val = map.get(a.x - 1, a.y, a.z + 1);
       if (val !== SCALE) {
         neighbors.push(new NodeData(a.x - 1, a.y, a.z + 1));
-        transitions.push((1 + val / SCALE) * DG1);
+        transitions.push((1 + val / SCALE * weight) * DG1);
       }
     }
     // - X - Y -Z LEFT-TOP-UP
     if (a.x - 1 > 0 && a.y - 1 > 0 && a.z + 1 < depth) {
-      val = map.get(a.x - 1, a.y - 1, a.z + 1)
+      val = map.get(a.x - 1, a.y - 1, a.z + 1);
       if (val !== SCALE) {
         neighbors.push(new NodeData(a.x - 1, a.y - 1, a.z + 1));
-        transitions.push((1 + val / SCALE) * DG2);
+        transitions.push((1 + val / SCALE * weight) * DG2);
       }
     }
     // -Z UP
     if (a.z + 1 < depth) {
-      val = map.get(a.x, a.y, a.z + 1)
+      val = map.get(a.x, a.y, a.z + 1);
       if (val !== SCALE) {
         neighbors.push(new NodeData(a.x, a.y, a.z + 1));
-        transitions.push((1 + val / SCALE) * ST);
+        transitions.push((1 + val / SCALE * weight) * ST);
       }
     }
-
   }
   return [neighbors, transitions];
 }
@@ -293,15 +299,16 @@ export function createPlanner(
   start: [number, number, number],
   goal: [number, number, number],
   allowDiag: boolean = true,
-  heuristic: string = 'manhattan'
+  heuristic: string = 'manhattan',
+  weight:number = WEIGHT
 ) {
   // Spread operator does not work with typescript here (must destructure)... (https://github.com/Microsoft/TypeScript/issues/4130)
   const [sx, sy, sz] = start;
   const [gx, gy, gz] = goal;
   const startNode = new NodeData(sx, sy, sz);
   const goalNode = new NodeData(gx, gy, gz);
-  const genSuccessorsPartial = partial(genSuccessors, map, allowDiag);
-  const heuristicFn = heuristic === 'manhattan' ? manhattan : euclidean
+  const genSuccessorsPartial = partial(genSuccessors, map, allowDiag, weight);
+  const heuristicFn = heuristic === 'manhattan' ? manhattan : euclidean;
 
   const planner = new AsyncAstar<NodeData>(
     startNode,
