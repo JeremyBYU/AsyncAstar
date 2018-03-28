@@ -31,7 +31,7 @@
     "version": "standard-version",
     "reset": "git clean -dfx && git reset --hard && npm i",
     "clean": "trash build test",
-    "all": "run-s reset test doc:html",
+    "all": "run-s test doc:html",
     "prepare-release": "run-s all version doc:publish"
   },
   "scripts-info": {
@@ -55,6 +55,7 @@
     "fastpriorityqueue": "^0.3.1",
     "heap": "^0.2.6",
     "lodash": "^4.17.5",
+    "lodash.partial": "^4.2.1",
     "ndarray": "^1.0.18"
   },
   "devDependencies": {

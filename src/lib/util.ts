@@ -1,4 +1,4 @@
-import { partial } from 'lodash';
+import partial from 'lodash.partial';
 import ndarray from 'ndarray';
 import { AsyncAstar, NodeCost } from '../lib/asyncastar';
 
