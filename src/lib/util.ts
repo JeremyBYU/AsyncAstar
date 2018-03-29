@@ -15,7 +15,7 @@ const SCALE = 255.0;
 const WEIGHT = 1;
 const ST = 1.0;
 const DG1 = 1.4142135; // root 2
-const DG2 = 1.73025; // root 5
+const DG2 = 1.73025; // root 3
 
 export function copyNdaray(arr: ndarray) {
   const arrData = arr.data.slice();
@@ -61,6 +61,23 @@ function euclidean(a, b) {
   return Math.sqrt(
     Math.pow(a.x - b.x, 2) + Math.pow(a.y - b.y, 2) + Math.pow(a.z - b.z, 2)
   );
+}
+
+
+/**
+ * Octile Distance in 3 Dimensions
+ * From Here: http://theory.stanford.edu/~amitp/GameProgramming/Heuristics.html
+ * @param {any} a 
+ * @param {any} b 
+ * @returns {number} 
+ */
+function octile(a, b):number {
+  const dx = Math.abs(a.x - b.x);
+  const dy = Math.abs(a.y - b.y);
+  const dz = Math.abs(a.z - b.z);
+  const order = [dx, dy, dz];
+  order.sort((n, m) => m - n);
+  return order[0] * ST + (DG1 - 1) * order[1] + (DG2 - 1) * order[2];
 }
 
 function genSuccessors(
@@ -300,7 +317,7 @@ export function createPlanner(
   goal: [number, number, number],
   allowDiag: boolean = true,
   heuristic: string = 'manhattan',
-  weight:number = WEIGHT
+  weight: number = WEIGHT
 ) {
   // Spread operator does not work with typescript here (must destructure)... (https://github.com/Microsoft/TypeScript/issues/4130)
   const [sx, sy, sz] = start;
@@ -308,7 +325,22 @@ export function createPlanner(
   const startNode = new NodeData(sx, sy, sz);
   const goalNode = new NodeData(gx, gy, gz);
   const genSuccessorsPartial = partial(genSuccessors, map, allowDiag, weight);
-  const heuristicFn = heuristic === 'manhattan' ? manhattan : euclidean;
+  let heuristicFn
+  switch (heuristic) {
+    case 'manhattan':
+      heuristicFn = manhattan;
+      break;
+    case 'euclidean':
+      heuristicFn = euclidean;
+      break;
+    case 'octile':
+      heuristicFn = octile
+      break;
+    default:
+      heuristicFn = manhattan
+      break;
+  }
+  // const heuristicFn = heuristic === 'manhattan' ? manhattan : euclidean;
 
   const planner = new AsyncAstar<NodeData>(
     startNode,
