@@ -23,15 +23,6 @@ export function copyNdaray(arr: ndarray) {
   return newArr;
 }
 
-// export function drawPath(arr: ndarray, path: Array<[number, number, number]>): void {
-//   path.forEach(node => {
-//     const [x, y, z] = node
-//     arr.set(x, y, 0, 255)
-//     arr.set(x, y, 1, 0)
-//     arr.set(x, y, 2, 0)
-//   })
-// }
-
 function hash(node: NodeData) {
   return `[${node.x}][${node.y}][${node.z}]`;
 }
@@ -67,17 +58,17 @@ function euclidean(a, b) {
 /**
  * Octile Distance in 3 Dimensions
  * From Here: http://theory.stanford.edu/~amitp/GameProgramming/Heuristics.html
- * @param {any} a 
- * @param {any} b 
+ * @param {NodeData} a 
+ * @param {NodeData} b 
  * @returns {number} 
  */
-function octile(a, b):number {
+function octile(a:NodeData, b:NodeData):number {
   const dx = Math.abs(a.x - b.x);
   const dy = Math.abs(a.y - b.y);
   const dz = Math.abs(a.z - b.z);
   const order = [dx, dy, dz];
   order.sort((n, m) => m - n);
-  return order[0] * ST + (DG1 - 1) * order[1] + (DG2 - 1) * order[2];
+  return order[0] * ST + (DG1 - ST) * order[1] + (DG2 - DG1) * order[2];
 }
 
 function genSuccessors(
