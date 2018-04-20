@@ -9,7 +9,9 @@
  */
 
  /** ignore this comment */
+ import FastHeap from 'fastpriorityqueue'
 import * as Heap from 'heap';
+
 import { HeapT } from '../types/heap';
 
 export type HashFn<T> = (node: T) => string;
@@ -19,6 +21,29 @@ export type StopFn<T> = (node: T, goalNode: T) => boolean;
 export type GenSuccessorsFn<T> = (node: T) => [T[], number[]];
 
 export type HeuristicFn<T> = (node: T, gaolNode:T) => number;
+
+
+class HeapContainer {
+  public heap:any
+  constructor(fastHeap) {
+    this.heap = fastHeap
+  }
+  public push(a) {
+    this.heap.add(a)
+  }
+  public pop() {
+    return this.heap.poll()
+  }
+  public updateItem(item){
+    const pos = this.heap.array.indexOf(item)
+    if (pos === -1) {
+      return
+    }
+    this.heap._percolateDown(pos)
+    const i = this.heap._percolateUp(pos)
+    // this.heap._percolateDown(i)
+  }
+}
 
 export interface AsyncAstarResult<T> {
   status: AsyncAstarStatus;
@@ -82,7 +107,8 @@ export default class AsyncAstar<T> {
     this.nodeSet.set(this.hashFn(this.startNode.data), this.startNode);
     // this.nodeSet.set(this.hashFn(this.goalNode.data), this.goalNode);
 
-    this.openList = new Heap.default((a, b) => a.f - b.f);
+    this.openList = new HeapContainer(new FastHeap((a, b) => a.f < b.f));
+    // this.openList = new Heap.default((a, b) => a.f - b.f);
     this.openList.push(this.startNode)
 
     this.finished = false;

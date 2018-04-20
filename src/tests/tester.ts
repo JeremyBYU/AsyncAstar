@@ -55,52 +55,21 @@ const planners = {
 };
 
 
-// const test = MAZE_BENCHMARKS[0];
-// const {planner, mazeInfo, maze} = planners.AsyncAstar(test);
-// const result = planner.searchAsync();
-// const pathData = result.path.map(node => [
-//   node.data.x,
-//   node.data.y,
-//   node.data.z
-// ]);
-// saveImage(
-//   maze,
-//   pathData,
-//   mazeInfo.fname.slice(0, -4) + `_solved.png`,
-//   planner,
-//   mazeInfo.is3D
-// );
-// console.log(result)
-
-const suite = new Benchmark.Suite('Small Obstacle');
-
-suite
-  .add('AsyncAstar', () => {
-    // console.log('run')
-    const mazeTest = MAZE_BENCHMARKS[0];
-    const {planner, mazeInfo, maze} = planners.AsyncAstar(mazeTest);
-    const result = planner.searchAsync();
-    // console.log('run finished')
-  }, {
-    onCycle() {
-      // console.log('bench cycle')
-    }
-  })
-  // add listeners
-  .on('cycle', event => {
-    // console.log(event)
-    const name = event.target.name
-    const meanTime = event.target.stats.mean.toFixed(3)
-    const rme = event.target.stats.rme.toFixed(2)
-    console.log(`${name} x${meanTime} sec. ± ${rme}%`)
-    // console.log(String(event.target));
-  })
-  .on('complete', function() {
-    console.log('Fastest is ' + this.filter('fastest').map('name'));
-  })
-  .on('start', () => {
-    console.log('Starting Small Obstacle Suite')
-  })
-  .run({ async: false });
+const test = MAZE_BENCHMARKS[0];
+const {planner, mazeInfo, maze} = planners.AsyncAstar(test);
+const result = planner.searchAsync();
+const pathData = result.path.map(node => [
+  node.data.x,
+  node.data.y,
+  node.data.z
+]);
+saveImage(
+  maze,
+  pathData,
+  mazeInfo.fname.slice(0, -4) + `_solved.png`,
+  planner,
+  mazeInfo.is3D
+);
+console.log(result)
 
 

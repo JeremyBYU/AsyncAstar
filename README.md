@@ -97,7 +97,7 @@ Library
     * Calclate a temporary path cost 
   * 
 
-
+ Percolate up (FastPriorityQueue) is sift down (heap)
 
 ```
 updateItem = (array, item, cmp=defaultCmp) ->
