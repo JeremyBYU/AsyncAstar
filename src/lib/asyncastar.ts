@@ -4,8 +4,11 @@
  *   Licensed under the MIT license.
  *
  *   Implementation By Jeremy Castagno (@jeremybyu)
+ * 
+ *   Use AsyncAstar class to instantiate a planner.
  */
 
+ /** ignore this comment */
 import * as Heap from 'heap';
 import { HeapT } from '../types/heap';
 
@@ -47,7 +50,7 @@ export class NodeCost<T> {
   }
 }
 
-export class AsyncAstar<T> {
+export default class AsyncAstar<T> {
   public finished: boolean;
 
   private nodeSet: Map<string, NodeCost<T>>;
@@ -99,7 +102,6 @@ export class AsyncAstar<T> {
       // Check if we have found the goal
       if (this.stopFn(curNode.data, this.goal)) {
         this.finished = true
-        // TODO get path
         return { status: AsyncAstarStatus.SUCCESS, path: this.getPath(curNode) };
       }
       // Put this node on the closed 'list', simply set a bit flag
@@ -162,7 +164,7 @@ export class AsyncAstar<T> {
   public updateHeuristic(newHeuristicFn:HeuristicFn<T>) {
     this.heuristicFn = newHeuristicFn
   }
-  public updateGenSuccesors(newGenSuccessors:GenSuccessorsFn<T>) {
+  public updateGenSuccessors(newGenSuccessors:GenSuccessorsFn<T>) {
     this.genSuccessorsFn = newGenSuccessors
   }
   public getAllNodes() {

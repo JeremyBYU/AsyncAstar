@@ -1,6 +1,17 @@
+/**
+ * This module holds utility functions that may be helpful to use with AsyncAstar.
+ * Please note that you do not need to use these utility functions to work with AsyncAstar.
+ * 
+ * Notable functions:
+ * *  `createPlanner` - Creates an AsyncAstar planner from a passed `ndarray` map.  Uses the `genSuccessors` function
+ * *  `genSuccessors` - Generates successors (neighbors) for a node given a map (ndarray).
+ * @preferred
+ */
+
+/** ignore this comment */
 import partial from 'lodash.partial';
 import ndarray from 'ndarray';
-import { AsyncAstar, NodeCost } from '../lib/asyncastar';
+import AsyncAstar, { NodeCost } from '../lib/asyncastar';
 
 export function toArrayBuffer(buf) {
   const ab = new ArrayBuffer(buf.length);
@@ -13,20 +24,34 @@ export function toArrayBuffer(buf) {
 
 const SCALE = 255.0;
 const WEIGHT = 1;
+
+// Movement cost: straight diagonal in plane, diagonal not in plane
 const ST = 1.0;
 const DG1 = 1.4142135; // root 2
 const DG2 = 1.73025; // root 3
 
-export function copyNdaray(arr: ndarray) {
+export function copyNdarray(arr: ndarray) {
   const arrData = arr.data.slice();
   const newArr = ndarray(arrData, arr.shape, arr.stride, arr.offset);
   return newArr;
 }
 
+/**
+ * Creates a hash from NodeData.
+ *
+ * @param {NodeData} node
+ * @returns {string}
+ */
 function hash(node: NodeData) {
   return `[${node.x}][${node.y}][${node.z}]`;
 }
 
+/**
+ * The data object for a Node. Encodes position.
+ * Note: You do NOT need to use this data structure for your graph.
+ * @export
+ * @class NodeData
+ */
 export class NodeData {
   public x: number;
   public y: number;
@@ -48,21 +73,27 @@ function manhattan(a, b) {
   return Math.abs(a.x - b.x) + Math.abs(a.y - b.y) + Math.abs(a.z - b.z);
 }
 
-function euclidean(a, b) {
+/**
+ * Euclidean distance between two nodes
+ *
+ * @param {NodeData} a
+ * @param {NodeData} b
+ * @returns {number}
+ */
+function euclidean(a: NodeData, b: NodeData): number {
   return Math.sqrt(
     Math.pow(a.x - b.x, 2) + Math.pow(a.y - b.y, 2) + Math.pow(a.z - b.z, 2)
   );
 }
 
-
 /**
  * Octile Distance in 3 Dimensions
  * From Here: http://theory.stanford.edu/~amitp/GameProgramming/Heuristics.html
- * @param {NodeData} a 
- * @param {NodeData} b 
- * @returns {number} 
+ * @param {NodeData} a
+ * @param {NodeData} b
+ * @returns {number}
  */
-function octile(a:NodeData, b:NodeData):number {
+function octile(a: NodeData, b: NodeData): number {
   const dx = Math.abs(a.x - b.x);
   const dy = Math.abs(a.y - b.y);
   const dz = Math.abs(a.z - b.z);
@@ -222,7 +253,7 @@ function genSuccessors(
     }
 
     //////// Top of Cube ////////////
-    // - Y - Z TOP-UP
+    // - Y + Z TOP-UP
     if (a.y - 1 > 0 && a.z + 1 < depth) {
       val = map.get(a.x, a.y - 1, a.z + 1);
       if (val !== SCALE) {
@@ -230,7 +261,7 @@ function genSuccessors(
         transitions.push((1 + val / SCALE * weight) * DG1);
       }
     }
-    // -Y+X-Z TOP-RIGHT-UP
+    // -Y+X+Z TOP-RIGHT-UP
     if (a.y - 1 > 0 && a.x + 1 < width && a.z + 1 < depth) {
       val = map.get(a.x + 1, a.y - 1, a.z + 1);
       if (val !== SCALE) {
@@ -238,7 +269,7 @@ function genSuccessors(
         transitions.push((1 + val / SCALE * weight) * DG2);
       }
     }
-    // + X-Z RIGHT UP
+    // + X+Z RIGHT UP
     if (a.x + 1 < width && a.z + 1 < depth) {
       val = map.get(a.x + 1, a.y, a.z + 1);
       if (val !== SCALE) {
@@ -262,7 +293,7 @@ function genSuccessors(
         transitions.push((1 + val / SCALE * weight) * DG1);
       }
     }
-    // + Y - X -Z BOTTOM-LEFT-UP
+    // + Y - X + Z BOTTOM-LEFT-UP
     if (a.y + 1 < height && a.x - 1 > 0 && a.z + 1 < depth) {
       val = map.get(a.x - 1, a.y + 1, a.z + 1);
       if (val !== SCALE) {
@@ -270,7 +301,7 @@ function genSuccessors(
         transitions.push((1 + val / SCALE * weight) * DG2);
       }
     }
-    // - X -Z  LEFT-UP
+    // - X + Z  LEFT-UP
     if (a.x - 1 > 0 && a.z + 1 < depth) {
       val = map.get(a.x - 1, a.y, a.z + 1);
       if (val !== SCALE) {
@@ -278,7 +309,7 @@ function genSuccessors(
         transitions.push((1 + val / SCALE * weight) * DG1);
       }
     }
-    // - X - Y -Z LEFT-TOP-UP
+    // - X - Y + Z LEFT-TOP-UP
     if (a.x - 1 > 0 && a.y - 1 > 0 && a.z + 1 < depth) {
       val = map.get(a.x - 1, a.y - 1, a.z + 1);
       if (val !== SCALE) {
@@ -286,7 +317,7 @@ function genSuccessors(
         transitions.push((1 + val / SCALE * weight) * DG2);
       }
     }
-    // -Z UP
+    // +Z UP
     if (a.z + 1 < depth) {
       val = map.get(a.x, a.y, a.z + 1);
       if (val !== SCALE) {
@@ -316,7 +347,7 @@ export function createPlanner(
   const startNode = new NodeData(sx, sy, sz);
   const goalNode = new NodeData(gx, gy, gz);
   const genSuccessorsPartial = partial(genSuccessors, map, allowDiag, weight);
-  let heuristicFn
+  let heuristicFn;
   switch (heuristic) {
     case 'manhattan':
       heuristicFn = manhattan;
@@ -325,10 +356,10 @@ export function createPlanner(
       heuristicFn = euclidean;
       break;
     case 'octile':
-      heuristicFn = octile
+      heuristicFn = octile;
       break;
     default:
-      heuristicFn = manhattan
+      heuristicFn = manhattan;
       break;
   }
   // const heuristicFn = heuristic === 'manhattan' ? manhattan : euclidean;

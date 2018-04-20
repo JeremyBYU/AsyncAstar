@@ -7,12 +7,11 @@ import ndarray from 'ndarray';
 import * as PNGJS from 'pngjs';
 import savePixels from 'save-pixels';
 
-import {
-  AsyncAstar,
+import AsyncAstar, {
   AsyncAstarResult,
   AsyncAstarStatus
 } from '../lib/asyncastar';
-import { copyNdaray, createPlanner, NodeData } from '../lib/util';
+import { copyNdarray, createPlanner, NodeData } from '../lib/util';
 import { MAZE_TESTS, MAZES } from './fixtures/data';
 import { saveImage } from './helper';
 
@@ -23,10 +22,12 @@ const FIXTURE_FOLDER = 'src/tests/fixtures';
 
 // Import the maze data (read PNG images)
 const MAZE_DATA = MAZES.map(maze => {
-  const fname = join(FIXTURE_FOLDER, maze.file || maze.name)
+  const fname = join(FIXTURE_FOLDER, maze.file || maze.name);
+  // Reading raw data
   if (maze.data) {
-    return {...maze, fname}
+    return { ...maze, fname };
   }
+  // Reading an actual picture (PNG)
   const buf = fs.readFileSync(fname);
   const img = PNG.sync.read(buf);
   const data = ndarray(
@@ -40,14 +41,20 @@ const MAZE_DATA = MAZES.map(maze => {
 
 MAZE_TESTS.forEach(mazeTest => {
   describe(mazeTest.name, () => {
-    let mazeInfo
-    let maze:ndarray;
+    let mazeInfo;
+    let maze: ndarray;
     let result: AsyncAstarResult<NodeData>;
     let planner: AsyncAstar<NodeData>;
     beforeAll(() => {
-      mazeInfo = MAZE_DATA.find(mzData => mazeTest.maze === mzData.name)
+      mazeInfo = MAZE_DATA.find(mzData => mazeTest.maze === mzData.name);
       maze = mazeInfo.data;
-      planner = createPlanner(maze, mazeTest.start, mazeTest.goal, mazeTest.allowDiag, mazeTest.heuristic);
+      planner = createPlanner(
+        maze,
+        mazeTest.start,
+        mazeTest.goal,
+        mazeTest.allowDiag,
+        mazeTest.heuristic
+      );
       result = planner.searchAsync();
     });
     test('Find Goal', () => {
@@ -59,14 +66,14 @@ MAZE_TESTS.forEach(mazeTest => {
         node.data.y,
         node.data.z
       ]);
-      await saveImage(maze, pathData, mazeInfo.fname.slice(0,-4) + `_solved.png`, planner, mazeInfo.is3D)
+      await saveImage(
+        maze,
+        pathData,
+        mazeInfo.fname.slice(0, -4) + `_solved.png`,
+        planner,
+        mazeInfo.is3D
+      );
       expect(pathData).toEqual(mazeTest.expectedPath);
     });
   });
 });
-
-// Create new image and write to it
-// const newArr = copyNdaray(maze)
-// drawPath(newArr, result.path)
-// const tmpPNGFile = fs.createWriteStream(tempPNG);
-// savePixels(newArr, "png").pipe(tmpPNGFile)

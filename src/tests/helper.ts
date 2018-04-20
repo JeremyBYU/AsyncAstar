@@ -7,8 +7,8 @@ import * as PNGJS from 'pngjs';
 
 import { createPNG, savePixels } from './savepixels';
 
-import { AsyncAstar } from '../lib/asyncastar';
-import { copyNdaray, NodeData } from '../lib/util';
+import AsyncAstar from '../lib/asyncastar';
+import { copyNdarray, NodeData } from '../lib/util';
 
 const ORANGE = Color('#FFA500')
   .rgb()
